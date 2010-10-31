@@ -1,0 +1,16 @@
+Revision history for Signals-XSIG
+
+0.04    2010-10-28
+        Implement S::X::TieArray->{start} attribute to (1) save memory and
+        (2) make it easier to distinguish "pre-handlers" and "post-handlers".
+
+0.03    2010-10-24
+        Removed %REGISTRY refs.
+
+0.02    2010-10-08
+        Introduces %XSIG.
+        Added defaul signal behaviors for solaris.
+
+0.01    Tie %SIG, use signal handler registry to implement multiple
+        signal handlers.
+
