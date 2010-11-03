@@ -5,8 +5,8 @@ use POSIX ();
 use Config;
 eval { require Time::HiRes };
 
-# running the default emulator of S::X should produce the
-# same behavior as not using S::X
+# running the default emulator of Signals::XSIG should produce the
+# same behavior as not using Signals::XSIG
 
 # it takes a few seconds to test each signal
 # so this is the most time consuming test.
@@ -49,16 +49,15 @@ my ($SIGCONT) = grep { $sig_names[$_] eq 'CONT' } @sig_num;
 my %sig_exists = map { $_ => 1 } @sig_names;
 my $failed = 0;
 
-
- 
 my @signals 
-  = qw(HUP INT QUIT ILL TRAP ABRT EMT FPE KILL BUS
+  = qw(USR1 USR2 CLD
+       HUP INT QUIT ILL TRAP ABRT EMT FPE KILL BUS
        SEGV SYS PIPE ALRM TERM URG STOP TSTP CONT CHLD
        TTIN TTOU IO XCPU XFSZ VTALRM PROF WINCH LOST
-       USR1 USR2 CLD
        STKFLT RTMIN RTMAX RTMIN+1 RTMAX-1 IOT CLD
        BREAK 
        FOO);
+
 if (@ARGV > 0) {
   my $n = @signals;
   @signals = @ARGV;
@@ -66,33 +65,32 @@ if (@ARGV > 0) {
 }
 
 my $program_without_SHS = <<'__PROGRAM_WITHOUT_SHS__';
+$|=0;
 $SIG{'__SIGNAL__'} = 'DEFAULT';
+print "Hello world";
 kill '__SIGNAL__', $$;
-print "Hello world\nFoo!";
+print "\nFoo!";
 exit 0;
 __PROGRAM_WITHOUT_SHS__
 ;
 
 my $program_with_SHS = <<'__PROGRAM_WITH_SHS__';
 use Signals::XSIG;
+$|=0;
 $XSIG{'__SIGNAL__'} = [ sub { }, 'DEFAULT' ];
+print "Hello world";
 kill '__SIGNAL__', $$;
-print "Hello world\nFoo!";
+print "\nFoo!";
 exit 0;
 __PROGRAM_WITH_SHS__
 ;
 
-
 foreach my $signal (@signals) {
 
  SKIP: {
-
     if (!exists $SIG{$signal} && !exists $sig_exists{$signal}) {
       skip "Signal $signal doesn't exist in $^O $]", 3;
     }
-
-    # signal might suspend a program, in which we case we need to
-    # arrange for SIGCONT to be delivered to it later.
 
     my $program1 = $program_without_SHS;
     $program1 =~ s/__SIGNAL__/$signal/g;
@@ -100,7 +98,7 @@ foreach my $signal (@signals) {
     my $program2 = $program_with_SHS;
     $program2 =~ s/__SIGNAL__/$signal/g;
 
-    my $PID = $$;
+    my $PID = "$signal.$$";
     open(PROG1, '>', "control_group.$PID.tt");
     print PROG1 $program1;
     close PROG1;
@@ -126,12 +124,16 @@ foreach my $signal (@signals) {
       exec($^X,"experimental_group.$PID.tt");
       die;
     }
-    pause();;
+
+    pause();
     my $xpid1 = my $ypid1 = waitpid $pid1, &POSIX::WNOHANG;
     my $status1 = $?;
 
     my $xpid2 = my $ypid2 = waitpid $pid2, &POSIX::WNOHANG;
     my $status2 = $?;
+
+    # some signals suspend a program, so we need to arrange
+    # for SIGCONT to be delivered
 
     kill 'CONT', $pid1, $pid2;
     $ypid1 || $ypid2 || pause();
@@ -147,10 +149,21 @@ foreach my $signal (@signals) {
       $status2 = $?;
     }
 
-    ok(!!$xpid1 == !!$xpid2, 
-       "suspend behavior was the same for SIG$signal "
-       . "($xpid1 $ypid1 / $xpid2 $ypid2)")
-      or $failed++;
+    # Three tests:
+    #     1. Are the exit statuses the same? This tests whether the
+    #        methods used to terminate the process look the same from
+    #        the operating system's point of view.
+    #     2. Is the output identical? This tests whether the behaviors
+    #        of flushing open output buffers on receipt of a signal
+    #        are the same.
+    #     3. Are the waitpid return values the same? This tests
+    #        whether behavior is the same with respect to terminating
+    #        or suspending a program
+
+
+    ok($status1 == $status2, 
+       "SIG$signal exit status was the same $status1 == $status2") 
+    or $failed++;
 
     open(IN1, '<', "out1.$PID");
     my $in1 = join'', <IN1>;
@@ -159,8 +172,9 @@ foreach my $signal (@signals) {
     my $in2 = join'', <IN2>;
     close IN2;
 
+    my $msg = $in1 eq $in2 ? "" : "[$in1 ; $in2]";
     ok($in1 eq $in2, 
-       "program output with SIG$signal was the same "
+       "program output with SIG$signal was the same $msg"
        . length($in1) . " === " . length($in2))
       or $failed++;
 
@@ -169,9 +183,23 @@ foreach my $signal (@signals) {
       unlink "out1.$PID", "out2.$PID";
     }
 
-    ok($status1 == $status2, 
-       "SIG$signal exit status was the same $status1 == $status2") 
-    or $failed++;
+    # This is an unexpected failure point in 0.04 where many CPAN
+    # testers IGNORE some signals that are supposed to SUSPEND 
+    # a process. Is there some config the CPAN testers have that
+    # traps SIGTSTP, SIGTTIN, and SIGTTOU.
+
+    no warnings 'once';
+    if ($xpid1 != 0 && $xpid2 == 0
+	&& $Signals::XSIG::Default::DEFAULT_BEHAVIOR{$signal} eq 'SUSPEND') {
+
+      skip "$^O failed to suspend on $signal", 1;
+
+    } else {
+      ok(!!$xpid1 == !!$xpid2, 
+	 "suspend behavior was the same for SIG$signal "
+	 . "($xpid1 $ypid1 / $xpid2 $ypid2)");
+    }
+
   }
 }
 

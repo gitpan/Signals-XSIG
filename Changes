@@ -1,5 +1,8 @@
 Revision history for Signals-XSIG
 
+0.05    2010-11-02
+        Update default behavior for lots of platforms from CPAN test results.
+
 0.04    2010-10-28
         Implement S::X::TieArray->{start} attribute to (1) save memory and
         (2) make it easier to distinguish "pre-handlers" and "post-handlers".
@@ -13,4 +16,3 @@ Revision history for Signals-XSIG
 
 0.01    Tie %SIG, use signal handler registry to implement multiple
         signal handlers.
-

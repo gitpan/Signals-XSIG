@@ -8,7 +8,7 @@ use Carp;
 use POSIX ();
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = $Signals::XSIG::VERSION;
+our $VERSION = '0.05';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};
@@ -16,6 +16,7 @@ my @snum = split ' ', $Config{sig_num};
 sub import {
   my $ignore = 1;
   while (<DATA>) {
+    next if /^#/;
     next unless /\S/;
     if (/^\[(.+)\]/) {
       if ($1 eq 'default' || $1 eq $^O) {
@@ -185,6 +186,9 @@ See L<Signals::XSIG> for much more information.
 #    spike/analyze_default_signal_behavior.pl
 # and include that data at the end of this file ...
 #
+# we can also infer behavior from CPAN tester results,
+# see t/20-defaults.t
+#
 __DATA__
 [default]
 ABRT [] => ABORT
@@ -194,6 +198,7 @@ BUS [] => TERMINATE
 CHLD [] => IGNORE
 CLD [] => IGNORE
 CONT [] => IGNORE
+EMT [] => TERMINATE
 FPE [] => TERMINATE
 HUP [] => TERMINATE
 ILL [] => TERMINATE
@@ -293,6 +298,94 @@ ZERO    [0] => IGNORE
 __DIE__ [] => IGNORE
 __WARN__ [] => IGNORE
 
+[cygwin]
+ABRT    [6] => TERMINATE 134
+ALRM    [14] => TERMINATE 14
+BUS     [10] => TERMINATE 10
+CHLD    [20] => IGNORE
+CLD     [20] => IGNORE
+CONT    [19] => IGNORE
+EMT     [7] => TERMINATE 7
+FPE     [8] => TERMINATE 8
+HUP     [1] => TERMINATE 1
+ILL     [4] => TERMINATE 4
+INT     [2] => TERMINATE 2
+IO      [23] => IGNORE
+KILL    [9] => TERMINATE 9
+LOST    [29] => TERMINATE 29
+PIPE    [13] => TERMINATE 13
+POLL    [23] => IGNORE
+PROF    [27] => TERMINATE 27
+PWR     [29] => TERMINATE 29
+QUIT    [3] => TERMINATE 131
+RTMAX   [32] => TERMINATE 32
+RTMIN   [32] => TERMINATE 32
+SEGV    [11] => TERMINATE 11
+STOP    [17] => SUSPEND
+SYS     [12] => TERMINATE 12
+TERM    [15] => TERMINATE 15
+TRAP    [5] => TERMINATE 5
+TSTP    [18] => SUSPEND
+TTIN    [21] => SUSPEND
+TTOU    [22] => SUSPEND
+URG     [16] => IGNORE
+USR1    [30] => TERMINATE 30
+USR2    [31] => TERMINATE 31
+VTALRM  [26] => TERMINATE 26
+WINCH   [28] => IGNORE
+XCPU    [24] => TERMINATE 24
+XFSZ    [25] => TERMINATE 25
+ZERO    [] => IGNORE
+__DIE__ [] => IGNORE
+__WARN__ [] => IGNORE
+
+# www.cpantesters.org/cpan/report/4d60a820-e5c2-11df-bf62-5eb33ef6c52e
+[darwin]
+ABRT   [6] => TERMINATE 6
+EMT    [7] => TERMINATE 7
+SEGV   [11] => TERMINATE 11
+IO     [] => IGNORE
+IOT    [6] => TERMINATE 6
+
+# www.cpantesters.org/cpan/report/4b99dd2a-e60f-11df-bb29-ad544afd17af
+[dragonfly]
+ABRT [6] => ABORT
+EMT [7] => TERMINATE 135
+SEGV [11] => TERMINATE 139
+IO [] => IGNORE
+IOT [] => ABORT
+
+# www.cpantesters.org/cpan/report/62d0832e-e621-11df-858d-e879df34a846a
+[freebsd]
+ABRT [6] => ABORT
+EMT [7] => TERMINATE 135
+SEGV [11] => TERMINATE 139
+IO [] => IGNORE
+IOT [] => ABORT
+
+# www.cpantesters.org/cpan/report/c8635a72-e5d6-11df-a833-d9c7245fd73a
+[irix]
+ABRT [6] => ABORT
+EMT [7] => TERMINATE 135
+SEGV [11] => TERMINATE 139
+RTMIN [49] => TERMINATE 49
+RTMAX [64] => TERMINATE 64
+IOT [] => ABORT
+
+# www.cpantesters.org/cpan/report/209fd0b6-e61e-11df-bb29-ad544afd17af
+[netbsd]
+ABRT [6] => ABORT
+EMT [7] => TERMINATE 135
+SEGV [11] => TERMINATE 139
+IO [] => IGNORE
+IOT [6] = ABORT
+
+[openbsd]
+ABRT [6] => ABORT
+EMT [7] => TERMINATE 135
+SEGV [11] => TERMINATE 139
+IO [] => IGNORE
+
 [solaris]
 ABRT    [6] => TERMINATE 134
 ALRM    [14] => TERMINATE 14
@@ -340,47 +433,6 @@ WINCH   [20] => IGNORE
 XCPU    [30] => TERMINATE 30
 XFSZ    [31] => TERMINATE 159
 XRES    [38] => IGNORE
-ZERO    [] => IGNORE
-__DIE__ [] => IGNORE
-__WARN__ [] => IGNORE
-
-[cygwin]
-ABRT    [6] => TERMINATE 134
-ALRM    [14] => TERMINATE 14
-BUS     [10] => TERMINATE 10
-CHLD    [20] => IGNORE
-CLD     [20] => IGNORE
-CONT    [19] => IGNORE
-EMT     [7] => TERMINATE 7
-FPE     [8] => TERMINATE 8
-HUP     [1] => TERMINATE 1
-ILL     [4] => TERMINATE 4
-INT     [2] => TERMINATE 2
-IO      [23] => IGNORE
-KILL    [9] => TERMINATE 9
-LOST    [29] => TERMINATE 29
-PIPE    [13] => TERMINATE 13
-POLL    [23] => IGNORE
-PROF    [27] => TERMINATE 27
-PWR     [29] => TERMINATE 29
-QUIT    [3] => TERMINATE 131
-RTMAX   [32] => TERMINATE 32
-RTMIN   [32] => TERMINATE 32
-SEGV    [11] => TERMINATE 11
-STOP    [17] => SUSPEND
-SYS     [12] => TERMINATE 12
-TERM    [15] => TERMINATE 15
-TRAP    [5] => TERMINATE 5
-TSTP    [18] => SUSPEND
-TTIN    [21] => SUSPEND
-TTOU    [22] => SUSPEND
-URG     [16] => IGNORE
-USR1    [30] => TERMINATE 30
-USR2    [31] => TERMINATE 31
-VTALRM  [26] => TERMINATE 26
-WINCH   [28] => IGNORE
-XCPU    [24] => TERMINATE 24
-XFSZ    [25] => TERMINATE 25
 ZERO    [] => IGNORE
 __DIE__ [] => IGNORE
 __WARN__ [] => IGNORE
