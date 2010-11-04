@@ -1,5 +1,8 @@
 Revision history for Signals-XSIG
 
+0.06    2010-11-03
+        Test and doc fixes. 
+
 0.05    2010-11-02
         Update default behavior for lots of platforms from CPAN test results.
 

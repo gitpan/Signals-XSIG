@@ -1,3 +1,4 @@
+use Signals::XSIG;
 use Test::More tests => 123;
 use strict;
 use warnings;

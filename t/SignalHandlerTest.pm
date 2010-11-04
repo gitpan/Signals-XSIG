@@ -62,7 +62,6 @@ sub trigger ($) {
 	$j += rand() - 0.5;
       }
     } elsif (eval { require Time::HiRes; Time::HiRes::alarm(0); 1 }) {
-      print STDERR "XXX Time::HiRes signal trigger ...\n";
       Time::HiRes::alarm(0.25);
       Time::HiRes::sleep(0.75);
       Time::HiRes::alarm(0);

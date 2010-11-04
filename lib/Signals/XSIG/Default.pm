@@ -8,7 +8,7 @@ use Carp;
 use POSIX ();
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};

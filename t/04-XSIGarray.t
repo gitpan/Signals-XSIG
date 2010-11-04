@@ -89,8 +89,6 @@ push @{$XSIG{$sig}}, \&ook;
 ok(!defined($XSIG{$sig}[0]), 'push does not set default handler');
 ok($XSIG{$sig}[1] eq \&ook, 'push sets posthandler');
 
-# XXX - can't pass NEGATIVE values to TiedArray::FETCH !
-#       (automatically adds TiedArray::FETCHSIZE to the result!)
 ok(!defined $XSIG{$sig}[-1], 'prehandler not set');
 my $u = pop @{$XSIG{$sig}};
 ok($u eq \&ook, 'pop retrieves pushed value');

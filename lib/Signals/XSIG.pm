@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(%XSIG);
 our @EXPORT_OK = qw(untied);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our (%XSIG, %_XSIG, %SIGTABLE, $_REFRESH, $_DISABLE_WARNINGS);
 our $_INITIALIZED = 0;
 our $SIGTIE = bless {}, 'Signals::XSIG::TieSIG';
@@ -550,7 +550,7 @@ Signals::XSIG - install multiple signal handlers through %XSIG
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =head1 SYNOPSIS
 
@@ -593,10 +593,10 @@ You have written a module that raises signals and makes
 use of signal handlers, but you don't want to preclude the
 end-user of your module from doing their own handling of that
 signal. The solution is to install your own signal handler
-with L<"register_signal_handler"> in a non-default index.
-Then the end-user may set and unset C<$SIG{signal}> as much
-as he or she would like, without disabling your module's
-handler for the signal.
+into a "non-default" index. Now your module's end-user can
+set and unset C<$SIG{signal}> as much as he or she would like.
+When the signal is trapped, both your module's signal handler
+and the end-user's signal handler (if any) will be invoked.
 
     package My::Module::With::USR1::Handler;
     use Signals::XSIG;
@@ -613,10 +613,6 @@ handler for the signal.
     ...
     1;
 
-=back
-
-=over 4
-
 =item 2. 
 
 You have multiple "layers" of signal handlers that you
@@ -624,7 +620,7 @@ want to enable and disable at will. For example, you
 may want to enable some handlers to write logging information
 about signals received.
 
-    use Signals::XSIG qw(register_signal_handler);
+    use Signals::XSIG;
 
     # log all warning messages
     $XSIG{__WARN__}[1] = \&log_messages;

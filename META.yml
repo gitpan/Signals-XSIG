@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Signals-XSIG
-version:            0.05
+version:            0.06
 abstract:           install multiple signal handlers through %XSIG
 author:
     - Marty O'Brien <mob@cpan.org>
