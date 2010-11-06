@@ -14,7 +14,9 @@ t/04-XSIGarray.t
 t/05-XSIGhash.t
 t/10-handlers.t
 t/11-local.t
-t/20-defaults.t
+t/20a-defaults.t
+t/20b-defaults.t
+t/20c-defaults.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t

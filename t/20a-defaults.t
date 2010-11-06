@@ -1,5 +1,5 @@
 use Signals::XSIG;
-use Test::More tests => 123;
+use Test::More tests => 96;
 use strict;
 use warnings;
 use POSIX ();
@@ -11,17 +11,6 @@ eval { require Time::HiRes };
 
 # it takes a few seconds to test each signal
 # so this is the most time consuming test.
-
-###########################################################
-#
-# If this test has failures ...
-#   1) Examine the __DATA__ section of Signals/XSIG/Default.pm
-#   2) If the name of your OS does not appear (e.g., [linux], [MSWin32], ...)
-#   3)     Run  spike/analyze_default_signal_behavior.pl
-#   4)     Send the output to  mob@cpan.org
-#   5)     Append the output to  Signals/XSIG/Default.pm
-#
-###########################################################
 
 $ENV{"PERL5LIB"} = join ':', @INC;
 if ($^O eq 'MSWin32') {
@@ -51,13 +40,9 @@ my %sig_exists = map { $_ => 1 } @sig_names;
 my $failed = 0;
 
 my @signals 
-  = qw(USR1 USR2 CLD
-       HUP INT QUIT ILL TRAP ABRT EMT FPE KILL BUS
-       SEGV SYS PIPE ALRM TERM URG STOP TSTP CONT CHLD
-       TTIN TTOU IO XCPU XFSZ VTALRM PROF WINCH LOST
-       STKFLT RTMIN RTMAX RTMIN+1 RTMAX-1 IOT CLD
-       BREAK 
-       FOO);
+  = qw(USR1 USR2 HUP INT QUIT ILL TRAP ABRT EMT FPE KILL BUS
+       SEGV SYS PIPE ALRM TERM URG XCPU XFSZ VTALRM PROF WINCH LOST
+       STKFLT RTMIN RTMAX RTMIN+1 RTMAX-1 IOT BREAK FOO);
 
 if (@ARGV > 0) {
   my $n = @signals;
@@ -184,23 +169,9 @@ foreach my $signal (@signals) {
       unlink "out1.$PID", "out2.$PID";
     }
 
-    # This is an unexpected failure point in 0.04 where many CPAN
-    # testers IGNORE some signals that are supposed to SUSPEND 
-    # a process. Is there some config the CPAN testers have that
-    # traps SIGTSTP, SIGTTIN, and SIGTTOU.
-
-    no warnings 'once';
-    if ($xpid1 != 0 && $xpid2 == 0
-	&& $Signals::XSIG::Default::DEFAULT_BEHAVIOR{$signal} eq 'SUSPEND') {
-
-      skip "$^O failed to suspend on $signal", 1;
-
-    } else {
-      ok(!!$xpid1 == !!$xpid2, 
-	 "suspend behavior was the same for SIG$signal "
-	 . "($xpid1 $ypid1 / $xpid2 $ypid2)");
-    }
-
+    ok(!!$xpid1 == !!$xpid2, 
+       "suspend behavior was the same for SIG$signal "
+       . "($xpid1 $ypid1 / $xpid2 $ypid2)");
   }
 }
 

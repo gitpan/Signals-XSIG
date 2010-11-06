@@ -8,7 +8,7 @@ use Carp;
 use POSIX ();
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};
@@ -169,10 +169,11 @@ Signals::XSIG::Default
 
 =head1 DESCRIPTION
 
-Module to emulate the default signal handler behavior for all
+Module for emulating the default behavior for all
 signals in your system. The emulator is used when you have
 used L<Signals::XSIG> to register more than one 
-handler for a signal, and one of those handlers is C<DEFAULT>.
+handler for a signal, and at least one of those 
+handlers is C<DEFAULT>.
 
 See L<Signals::XSIG> for much more information.
 
@@ -349,19 +350,19 @@ IOT    [6] => TERMINATE 6
 
 # www.cpantesters.org/cpan/report/4b99dd2a-e60f-11df-bb29-ad544afd17af
 [dragonfly]
-ABRT [6] => ABORT
+ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
 SEGV [11] => TERMINATE 139
 IO [] => IGNORE
-IOT [] => ABORT
+IOT [] => TERMINATE 134
 
 # www.cpantesters.org/cpan/report/62d0832e-e621-11df-858d-e879df34a846a
 [freebsd]
-ABRT [6] => ABORT
+ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
 SEGV [11] => TERMINATE 139
 IO [] => IGNORE
-IOT [] => ABORT
+IOT [] => TERMINATE 134
 
 # www.cpantesters.org/cpan/report/c8635a72-e5d6-11df-a833-d9c7245fd73a
 [irix]
@@ -381,7 +382,7 @@ IO [] => IGNORE
 IOT [6] = ABORT
 
 [openbsd]
-ABRT [6] => ABORT
+ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
 SEGV [11] => TERMINATE 139
 IO [] => IGNORE

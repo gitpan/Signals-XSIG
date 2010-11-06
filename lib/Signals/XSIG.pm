@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(%XSIG);
 our @EXPORT_OK = qw(untied);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our (%XSIG, %_XSIG, %SIGTABLE, $_REFRESH, $_DISABLE_WARNINGS);
 our $_INITIALIZED = 0;
 our $SIGTIE = bless {}, 'Signals::XSIG::TieSIG';
@@ -550,7 +550,7 @@ Signals::XSIG - install multiple signal handlers through %XSIG
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =head1 SYNOPSIS
 
@@ -561,7 +561,7 @@ Version 0.06
     $SIG{USR1} = sub { ... };
     $SIG{PIPE} = 'DEFAULT';
 
-    # %XSIG interface to registering multiple signal handlers
+    # %XSIG interface to installing multiple signal handlers
     $SIG{TERM} = \&handle_sigterm;  # same as  $XSIG{TERM}[0] = ...
     $XSIG{TERM}[3] = \&posthandle_sigterm;
     $XSIG{TERM}[-1] = \&prehandle_sigterm;
@@ -684,7 +684,7 @@ expression.
 =item $XSIG{signal}[-n] = handler  for  -n E<lt> 0
 
 Installs the given signal handler at the specified indicies.
-When multiple signal handlers are registered and a signal is
+When multiple signal handlers are installed and a signal is
 trapped, the signal handlers are invoked in order from lowest
 indexed to highest indexed.
 

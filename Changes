@@ -1,5 +1,8 @@
 Revision history for Signals-XSIG
 
+0.07    2010-11-05
+        Test and default signal handling fixes.
+
 0.06    2010-11-03
         Test and doc fixes. 
 
