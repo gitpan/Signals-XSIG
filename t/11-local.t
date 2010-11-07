@@ -7,7 +7,9 @@ use strict;
 use warnings;
 no warnings 'signal';
 
-# S::X behavior persists inside and after a localized block
+# does our %XSIG signal handling framework still work after we
+# local'ize an element of %XSIG or %SIG? If we local'ize all
+# of %XSIG or %SIG?
 
 sub foo { 42 }
 sub bar { 43 }

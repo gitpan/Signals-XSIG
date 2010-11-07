@@ -6,6 +6,9 @@ use Config;
 use strict;
 use warnings;
 
+# are signal handlers registered correctly when we
+# set $XSIG{signal} or @{$XSIG{signal}} directly?
+
 sub foo { 42 }
 
 ################### valid signal name ###############

@@ -5,6 +5,9 @@ use Config;
 use strict;
 use warnings;
 
+# when we set $SIG{signal}, is the registered signal handler
+# reflected in $XSIG{signal}?
+
 my $sig = appropriate_signals();
 
 sub ok_sig_is {

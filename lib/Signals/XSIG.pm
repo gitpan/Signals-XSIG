@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(%XSIG);
 our @EXPORT_OK = qw(untied);
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 our (%XSIG, %_XSIG, %SIGTABLE, $_REFRESH, $_DISABLE_WARNINGS);
 our $_INITIALIZED = 0;
 our $SIGTIE = bless {}, 'Signals::XSIG::TieSIG';
@@ -550,7 +550,7 @@ Signals::XSIG - install multiple signal handlers through %XSIG
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =head1 SYNOPSIS
 

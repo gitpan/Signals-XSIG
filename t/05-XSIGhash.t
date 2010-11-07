@@ -7,6 +7,9 @@ use Config;
 use strict;
 use warnings;
 
+# are signal handlers registered correctly when we
+# set %XSIG directly?
+
 sub oof { 42 } ;
 
 my ($s1,$s2) = appropriate_signals();

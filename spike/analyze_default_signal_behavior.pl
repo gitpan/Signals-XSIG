@@ -1,6 +1,3 @@
-# Default.pm.PL: creates the lib/Signals/XSIG/Default.pm file,
-# which specifies how to emulate the 'DEFAULT' behavior of each signal.
-
 # analyze_default_signal_behavior.pl: see what each signal does
 # to a Perl program when the "DEFAULT" signal handler is set on 
 # that program. The results can be appended to the
@@ -8,18 +5,20 @@
 
 use IO::Handle;
 use POSIX ':sys_wait_h';
+use Config;
 use strict;
 use warnings;
 $| = 1;
 
-print STDERR <<"";
+if (@ARGV < 2) {
+  print STDERR qq[
 This program will experimentally determine the default behavior 
 of each signal on your system. The data collected will be
 helpful in creating an appropriate  Signals/XSIG/Default.pm  
-file.\n
+file.
+];
 
-;
-
+}
 
 my (@IGNORE, @SUSPEND, @TERMINATE, @UNKNOWN);
 my $num_simultaneous = shift @ARGV || 10;
@@ -29,9 +28,12 @@ my @sigs = (sort keys %SIG, 'ZERO');
 @sigs = @ARGV if @ARGV > 0;
 my $abort_status;
 
-printf STDERR "There are %d signals to analyze.\n", scalar @sigs;
-print STDERR "This may take a few minutes.\n\n";
+if (@ARGV < 2) {
+  printf STDERR "There are %d signals to analyze.\n", scalar @sigs;
+  print STDERR "This may take a few minutes.\n\n";
+}
 
+# figure out the exit status of a program that calls POSIX::abort()
 sub abort_status {
   use POSIX ();
   if (!defined $abort_status) {
@@ -46,20 +48,19 @@ sub abort_status {
 }
 
 sub analysis_file {
-    my ($signal) = @_;
-    "siganal$signal.txt";
+  my ($signal) = @_;
+  "siganal$signal.txt";
 }
 
 sub analyze_default_behavior_for_signal {
   my ($sig, $i, $analysis_file, $analysis_script) = @_;
 
-# local $SIG{$sig} = 'DEFAULT';
   $analysis_file ||= analysis_file($sig);
   $analysis_script ||= "siganal$i.pl";
   unlink $analysis_file, $analysis_script;
 
   open my $cfh, '>', $analysis_script;
-  print $cfh <<"CHILD_SIGNAL_TESTER";
+  print $cfh qq[
 
 \$SIG{'$sig'} = 'DEFAULT';
 my \$n = sleep 2;
@@ -69,8 +70,8 @@ print F \$msg;
 close F;
 exit 0;
 
-CHILD_SIGNAL_TESTER
-  ;
+];
+
   close $cfh;
   my $status = 'unknown';
   my ($pid, $win32ProcObj);
@@ -122,24 +123,22 @@ CHILD_SIGNAL_TESTER
 $::j=0;
 print "[$^O]\n";
 while (@sigs) {
-    my @sigz = splice @sigs, 0, $num_simultaneous;
-    my $i = 0;
-    foreach my $sig (@sigz) {
-	if (fork() == 0) {
-	    analyze_default_behavior_for_signal($sig,$i);
-	    exit 0;
-	}
-	$i++;
+  my @sigz = splice @sigs, 0, $num_simultaneous;
+  my $i = 0;
+  foreach my $sig (@sigz) {
+    if (fork() == 0) {
+      analyze_default_behavior_for_signal($sig,$i);
+      exit 0;
     }
-    wait foreach @sigz;
-    foreach my $sig (@sigz) {
-	parse_analysis_file($sig,analysis_file($sig));
-    }
+    $i++;
+  }
+  wait foreach @sigz;
+  foreach my $sig (@sigz) {
+    parse_analysis_file($sig,analysis_file($sig));
+  }
 }
 
 sub parse_analysis_file {
-  use Config;
-
   my ($sig,$file) = @_;
   open G, '<', $file;
   my @g = <G>;
@@ -155,24 +154,34 @@ sub parse_analysis_file {
 
   my ($sleep_result, $sleep_benchmark) = $g[0] =~ /CHILD (\d+) \/ (\d+)/;
   if (defined $sleep_benchmark && $sleep_result > $sleep_benchmark) {
+    # the program completed but took longer than ~4 seconds.
+    # This means it was suspended and then resumed several seconds later.
     push @SUSPEND, $sig;
     printf STDERR "%d. SIG", $i;
     printf "%-7s [%s] => %s\n", $sig, $sig_no, "SUSPEND";
   } else {
     my ($status) = $g[-1] =~ /Status: (\d+)/;
     if ($status eq "0") {
+      # The program completed normally in a regular amount of time.
+      # The signal was ignored or not received.
       push @IGNORE, $sig;
       printf STDERR "%d. SIG", $i;
       printf "%-7s [%s] => %s\n", $sig, $sig_no, "IGNORE";
     } elsif ($status > 0) {
+      # The program did not complete normally.
+      # The signal terminated the program.
       push @TERMINATE, $sig;
 
       printf STDERR "%d. SIG", $i;
       if ($status == $sig_no << 8) {
+	# exit status is divisible by 256. Like quitting with  exit()
 	printf "%-7s [%s] => %s\n", $sig, $sig_no, "EXIT $sig_no";
       } elsif (0 && $status == abort_status()) {
+	# exit status same as abort status (see &abort_status).
 	printf "%-7s [%s] => %s\n", $sig, $sig_no, "ABORT";
       } else {
+	# exit status not divisible by 256. Only way to do this
+	# reliably is to actually raise the signal
 	printf "%-7s [%s] => %s\n", $sig, $sig_no, "TERMINATE $status";
       }
     } else {
@@ -181,7 +190,5 @@ sub parse_analysis_file {
       printf "%-7s [%s] => %d %s\n", $sig, $sig_no, $status, "UNKNOWN";
     }
   }
-
   unlink $file;
-}   ### next sig
-
+}

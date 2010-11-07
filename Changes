@@ -1,5 +1,10 @@
 Revision history for Signals-XSIG
 
+0.08    2010-11-07
+        Test changes -- when default test fails for some signal, run
+        spike/analyze_default_signal_behavior.pl to include the correct
+        default behavior in the test output.
+
 0.07    2010-11-05
         Test and default signal handling fixes.
 

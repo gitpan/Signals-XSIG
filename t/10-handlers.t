@@ -4,6 +4,14 @@ use Test::More tests => 16;
 use strict;
 use warnings;
 
+# when we install one or more handlers for a signal, do those
+# handlers execute, and execute in the expected order, when
+# we trap that signal?
+
+# when we install handler(s) for an alias of a signal (e.g.,
+# CLD is often an alias for CHLD), do those handlers execute
+# when the canonical signal is trapped?
+
 my $R = '';
 my %f = ();
 my $sig = 'ALRM';

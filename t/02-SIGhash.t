@@ -7,6 +7,9 @@ use Config;
 use strict;
 use warnings;
 
+# when we set %SIG directly, are the installed signal handlers
+# reflected in %XSIG?
+
 ok(tied %SIG, "\%SIG is tied");
 
 my ($s1,$s2) = appropriate_signals();

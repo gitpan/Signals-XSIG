@@ -6,6 +6,9 @@ use Config;
 use strict;
 use warnings;
 
+# are signal handlers registered correctly when we 
+# set $XSIG{signal}[index] directly?
+
 my $sig = appropriate_signals();
 
 my $t = $XSIG{$sig};
