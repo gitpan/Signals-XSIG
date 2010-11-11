@@ -173,8 +173,12 @@ sub ok_test_behavior {
 
 sub on_failure_recommend_spike {
 
-  my (@failed_sigs) = @_;
+  # run  spike/analyze_default_signal_behavior.pl  on the signals that
+  # failed this test. This way, we get information about what the
+  # signals *should* do on this system in the test output, and we
+  # can incorporate this data into the next fix.
 
+  my (@failed_sigs) = @_;
   close STDOUT; open STDOUT, '>&STDERR';
   system($^X, "spike/analyze_default_signal_behavior.pl", 1, @failed_sigs);
 

@@ -36,6 +36,7 @@ foreach my $signal (@signals) {
     if ($basic->{xpid} != 0 && $module->{xpid} == 0
 	&& $Signals::XSIG::Default::DEFAULT_BEHAVIOR{$signal} eq 'SUSPEND') {
 
+      push @failed, $signal;
       diag "expected $^O to suspend on SIG$signal, but it didn't";
       skip "expected $^O to suspend on SIG$signal, but it didn't", 3;
 

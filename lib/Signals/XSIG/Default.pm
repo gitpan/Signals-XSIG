@@ -8,7 +8,7 @@ use Carp;
 use POSIX ();
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};
@@ -366,24 +366,26 @@ IOT [] => TERMINATE 134
 
 # www.cpantesters.org/cpan/report/c8635a72-e5d6-11df-a833-d9c7245fd73a
 [irix]
-ABRT [6] => ABORT
+ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
 SEGV [11] => TERMINATE 139
 RTMIN [49] => TERMINATE 49
 RTMAX [64] => TERMINATE 64
-IOT [] => ABORT
+IOT [] => TERMINATE 134
 
 # www.cpantesters.org/cpan/report/209fd0b6-e61e-11df-bb29-ad544afd17af
 [netbsd]
-ABRT [6] => ABORT
+ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
 SEGV [11] => TERMINATE 139
 IO [] => IGNORE
-IOT [6] = ABORT
+IOT [6] = TERMINATE 134
 
 [openbsd]
+ILL [4] => TERMINATE 132
 ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
+BUS [10] => TERMINATE 138
 SEGV [11] => TERMINATE 139
 IO [] => IGNORE
 

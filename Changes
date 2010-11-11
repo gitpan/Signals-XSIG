@@ -1,5 +1,8 @@
 Revision history for Signals-XSIG
 
+0.09    2010-11-10
+        Test changes. More tweaks to default behavior on bsd, irix systems.
+
 0.08    2010-11-07
         Test changes -- when default test fails for some signal, run
         spike/analyze_default_signal_behavior.pl to include the correct
