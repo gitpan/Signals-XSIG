@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(%XSIG);
 our @EXPORT_OK = qw(untied);
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 our (%XSIG, %_XSIG, %SIGTABLE, $_REFRESH, $_DISABLE_WARNINGS);
 our $_INITIALIZED = 0;
 our $SIGTIE = bless {}, 'Signals::XSIG::TieSIG';
@@ -550,7 +550,7 @@ Signals::XSIG - install multiple signal handlers through %XSIG
 
 =head1 VERSION
 
-Version 0.09
+Version 0.10
 
 =head1 SYNOPSIS
 
@@ -910,7 +910,7 @@ _head1 ACKNOWLEDGEMENTS
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010 Marty O'Brien.
+Copyright 2010-2011 Marty O'Brien.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

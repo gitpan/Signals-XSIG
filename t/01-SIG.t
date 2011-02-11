@@ -80,10 +80,17 @@ ok(ref $XSIG{$sig}[0] eq 'CODE', '\%XSIG CODE ref assignment');
 ok($SIG{$sig} eq $XSIG{$sig}[0], '\%SIG,\%XSIG equivalent');
 
 
-# core dump somewhere soon after this line on Strawberry Perl 5.8.9
+# core dump somewhere soon after this line on Strawberry Perl 5.8.9, 5.10.1
 
-delete $SIG{$sig};
-ok_sig_is($sig, undef);
+
+SKIP: {
+  if ($^O eq 'MSWin32' && $] < 5.012) {
+    skip "can't test delete $SIG{$sig} on MSWin32 v<5.12", 2;
+  }
+  delete $SIG{$sig};
+  ok_sig_is($sig, undef);
+}
+
 
 ####################### alias signal name ######################
 
@@ -154,9 +161,14 @@ ok(ref $XSIG{$alias}[0] eq 'CODE');
 ok($SIG{$alias} eq $XSIG{$alias}[0]);
 ok($SIG{$sig} eq $SIG{$alias});
 
-delete $SIG{$alias};
-ok_sig_is($sig, undef);
-ok_sig_is($alias, undef);
+SKIP: {
+  if ($^O eq 'MSWin32' && $] < 5.12) {
+    skip "Can't delete \$SIG{\$sig} on MSWin32 v<5.12", 4;
+  }
+  delete $SIG{$alias};
+  ok_sig_is($sig, undef);
+  ok_sig_is($alias, undef);
+}
 
 ok(tied %SIG);
 
