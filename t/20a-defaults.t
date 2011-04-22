@@ -1,5 +1,5 @@
 use Signals::XSIG;
-use Test::More tests => 93;
+use Test::More tests => 81;
 use strict;
 use warnings;
 use POSIX ();
@@ -19,7 +19,7 @@ my @failed = ();
 my @signals 
   = qw(USR1 USR2 HUP INT QUIT ILL TRAP ABRT EMT FPE KILL BUS
        SEGV SYS PIPE ALRM TERM URG XCPU XFSZ VTALRM PROF LOST
-       STKFLT RTMIN RTMAX RTMIN+1 RTMAX-1 IOT BREAK FOO);
+       STKFLT IOT BREAK FOO);
 
 if (@ARGV > 0) {
   my $n = @signals;

@@ -153,7 +153,7 @@ sub parse_analysis_file {
   $sig_no ||= '';
 
   my ($sleep_result, $sleep_benchmark) = $g[0] =~ /CHILD (\d+) \/ (\d+)/;
-  if (defined $sleep_benchmark && $sleep_result > $sleep_benchmark) {
+  if (defined($sleep_benchmark) && $sleep_result > $sleep_benchmark) {
     # the program completed but took longer than ~4 seconds.
     # This means it was suspended and then resumed several seconds later.
     push @SUSPEND, $sig;

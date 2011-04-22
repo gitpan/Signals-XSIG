@@ -1,6 +1,9 @@
 # emulate default behaviors for the various signals.
 
 package Signals::XSIG::Default;
+
+## no critic (RequireLocalizedPunctuationVars)
+
 use strict;
 use warnings;
 use Config;
@@ -8,7 +11,7 @@ use Carp;
 use POSIX ();
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};
@@ -34,17 +37,20 @@ sub import {
       s/^\d+\. //;
       s/^SIG//;
       my ($sig, $num, $behavior) = /^(\w+)\s+\[(\d*)\]\s+=>\s+(.+)/;
-      $DEFAULT_BEHAVIOR{$sig} = $behavior;
+      if (defined $sig) {
+	$DEFAULT_BEHAVIOR{$sig} = $behavior;
+      }
     }
   }
+  return;
 }
 
 sub perform_default_behavior {
-  my $signal = shift;
+  my ($signal, @args) = @_;
   my $funcname = 'default_SIG' . $signal;
   if (defined &$funcname) {
-    no strict 'refs';
-    return if $funcname->($signal, @_);
+    no strict 'refs';                    ## no critic (NoStrict)
+    return if $funcname->($signal, @args);
   }
 
   my $behavior = $DEFAULT_BEHAVIOR{$signal};
@@ -115,6 +121,7 @@ sub killprog_with_signal {
   }
 
   kill $sig, $$;
+  sleep 1 if $^O eq 'MSWin32';
   eval {
     use POSIX ();
     if ($sig_no) {
@@ -124,9 +131,10 @@ sub killprog_with_signal {
     }
   };
   kill $sig, $$;
+  sleep 1 if $^O eq 'MSWin32';
 
   my $miniprog = q[$SIG{'__SIGNAL__'}='DEFAULT';
-                   kill '__SIGNAL__',$$;sleep 1;die];
+                   kill '__SIGNAL__',$$;sleep 1+"MSWin32"eq$^O;die];
   $miniprog =~ s/__SIGNAL__/$sig/g;
   exec($^X, "-e", $miniprog);
 }
@@ -139,7 +147,7 @@ sub suspend {
     # Win32::Process->suspend ?
     # Win32::Thread->suspend ?
   }
-  kill 'STOP', $$;
+  return kill 'STOP', $$;
 }
 
 ##################################################################
@@ -151,12 +159,12 @@ sub suspend {
 # Return true if the signal is "handled" and no further 
 # processing is necessary.
 
-sub default_SIG__WARN__ {
+sub default_SIG__WARN__ {          ## no critic (Unpacking)
   CORE::warn @_;
   return 1;
 }
 
-sub default_SIG__DIE__ {
+sub default_SIG__DIE__ {          ## no critic (Unpacking)
   CORE::die @_;
   return 1;
 }
@@ -364,6 +372,13 @@ SEGV [11] => TERMINATE 139
 IO [] => IGNORE
 IOT [] => TERMINATE 134
 
+[gnukfreebsd]
+ABRT [6] => TERMINATE 134
+EMT [7] => TERMINATE 135
+SEGV [11] => TERMINATE 139
+IO [] => IGNORE
+IOT [] => TERMINATE 134
+
 # www.cpantesters.org/cpan/report/c8635a72-e5d6-11df-a833-d9c7245fd73a
 [irix]
 ABRT [6] => TERMINATE 134
@@ -385,6 +400,12 @@ IOT [6] = TERMINATE 134
 ILL [4] => TERMINATE 132
 ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
+BUS [10] => TERMINATE 138
+SEGV [11] => TERMINATE 139
+IO [] => IGNORE
+
+[mirbsd]
+ILL [4] => TERMINATE 132
 BUS [10] => TERMINATE 138
 SEGV [11] => TERMINATE 139
 IO [] => IGNORE

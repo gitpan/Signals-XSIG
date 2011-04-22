@@ -64,12 +64,12 @@ ok($restored, "hash val restored after local \$SIG{...}");
     $SIG{$s} = 'IGNORE';
     ok($SIG{$s} eq 'IGNORE', 'set $SIG{sig}');
 
-    # failure point with perl 5.13
-    if ($Config{PERL_VERSION} == 13) {
-      skip '5.13 local breaks tie', 2;
+    # failure point with perl 5.13 and 5.14
+    if ($Config{PERL_VERSION} >= 13) {
+      skip 'local breaks tie since 5.13', 2;
     }
-    ok(tied %SIG, "\%SIG tied during localization");
-    ok($XSIG{$s}[0] eq 'IGNORE', 'set $XSIG{sig}');
+    ok(tied %SIG, "\%SIG tied during localization");   ### 13 ###
+    ok($XSIG{$s}[0] eq 'IGNORE', 'set $XSIG{sig}');    ### 14 ###
   }
 
   # perl 5.6,5.8 - lots of uninitialized warnings here

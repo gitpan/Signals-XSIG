@@ -1,5 +1,8 @@
 Revision history for Signals-XSIG
 
+0.11    2011-04-21
+        More test and doc tweaks.
+
 0.10    2011-02-11
         Test tweak to help pass on OpenBSD, MSWin32.
 

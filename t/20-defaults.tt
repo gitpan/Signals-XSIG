@@ -8,7 +8,9 @@ eval { require Time::HiRes };
 # running the default emulator of Signals::XSIG should produce the
 # same behavior as not using Signals::XSIG
 #
+# t/20a-defaults.t: signals that typically end the program somehow
 # t/20b-defaults.t: signals that typically SUSPEND
+# t/20c-defaults.t: signals that are typically ignored
 
 # it takes a few seconds to test each signal
 # so this is the most time consuming test.
@@ -30,11 +32,17 @@ my @sig_num = split ' ', $Config{sig_num};
 my ($SIGCONT) = grep { $sig_names[$_] eq 'CONT' } @sig_num;
 my %sig_exists = map { $_ => 1 } @sig_names;
 
+# XXX -
+# should we use  print ...
+# or             syswrite select(), ... 
+# ?
+
 my $program_without_SHS = <<'__PROGRAM_WITHOUT_SHS__';
 $|=0;
 $SIG{'__SIGNAL__'} = 'DEFAULT';
 print "Hello world";
 kill '__SIGNAL__', $$;
+sleep 1;
 print "\nFoo!";
 exit 0;
 __PROGRAM_WITHOUT_SHS__
@@ -46,13 +54,13 @@ $|=0;
 $XSIG{'__SIGNAL__'} = [ sub { }, 'DEFAULT' ];
 print "Hello world";
 kill '__SIGNAL__', $$;
+sleep 1;
 print "\nFoo!";
 exit 0;
 __PROGRAM_WITH_SHS__
 ;
 
-# pause time was 3s. 5s is safer if your system
-# is loaded.
+# pause time was 3s. 5s is safer if your system is loaded.
 our $PAUSE_TIME = $ENV{PAUSE_TIME} || 5;
 
 sub pause {
@@ -115,8 +123,6 @@ sub test_default_behavior_for_signal {
   kill 'CONT', $pid1, $pid2;
   $ypid1 || $ypid2 || pause();
   kill 'KILL', $pid1, $pid2;
-  close OUT1;
-  close OUT2;
   if ($ypid1 == 0) {
     $ypid1 = waitpid $pid1, 0;
     $status1 = $?;
@@ -125,6 +131,8 @@ sub test_default_behavior_for_signal {
     $ypid2 = waitpid $pid2, 0;
     $status2 = $?;
   }
+  close OUT1;
+  close OUT2;
 
   open(IN1, '<', "out1.$PID");
   my $in1 = join'', <IN1>;
@@ -156,13 +164,19 @@ sub ok_test_behavior {
   or $failed++;
 
   my $msg = $basic->{output} eq $module->{output}
-    ? "" : "[$basic->{output} ; $module->{output}]";
+    ? "" : "system: [$basic->{output}] ; module: [$module->{output}]";
 
   ok($basic->{output} eq $module->{output}
 	# OpenBSD failure point on 0.09: SIGILL, SIGBUS, SIGSEGV
 	#    should produce no output, but module produces
 	#    "Hello world". This shouldn't be a deal killer.
+
 	|| ($^O =~ /openbsd/ && $basic->{output} eq ''),
+
+	# Also an intermittent failure point on MSWin32 with 0.10-0.11
+
+
+
      "program output with SIG$signal was the same $msg"
      . length($basic->{output}) . " === " . length($module->{output}))
   or $failed++;
@@ -186,6 +200,7 @@ sub on_failure_recommend_spike {
   # can incorporate this data into the next fix.
 
   my (@failed_sigs) = @_;
+  return if $ENV{NO_SPIKE};
   close STDOUT; open STDOUT, '>&STDERR';
   system($^X, "spike/analyze_default_signal_behavior.pl", 1, @failed_sigs);
 
