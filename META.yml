@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Signals-XSIG
-version:            0.11
+version:            0.12
 abstract:           install multiple signal handlers through %XSIG
 author:
     - Marty O'Brien <mob@cpan.org>
@@ -16,7 +16,7 @@ no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.55_02
+generated_by:       ExtUtils::MakeMaker version 6.57_05
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4

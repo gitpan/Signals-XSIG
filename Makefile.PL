@@ -14,29 +14,13 @@ if ($Config{"PERL_VERSION"} == 8) {
 *                                         *
 * causes a fatal error. This module works *
 * by making %SIG into a tied hash, so     *
-* code that used the somewhat esoteric    *
+* code that uses the somewhat esoteric    *
 * assignment                              *
 *                                         *
 *      $SIG{signal} = *function;          *
 *                                         *
 * will not work with this module.         *
 *******************************************
-
-__END_WARNING__;
-}
-
-if (0 && $Config{"PERL_VERSION"} == 13) {
-  # don't think we still have this problem in 0.03
-  print <<'__END_WARNING__;';
-
-****************************************
-*    !!!!!!!!! WARNING !!!!!!!!!!!!    *
-* Behavior of this module is different *
-* under Perl 5.13 than under earlier   *
-* versions. Consult the BUGS AND       *
-* LIMITATIONS section of the perldoc   *
-* for more details.                    *
-****************************************
 
 __END_WARNING__;
 }

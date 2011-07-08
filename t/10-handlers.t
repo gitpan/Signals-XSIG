@@ -1,6 +1,6 @@
-use Signals::XSIG qw(untied %XSIG);
+use Signals::XSIG;
 use t::SignalHandlerTest;
-use Test::More tests => 16;
+use Test::More tests => 19;
 use strict;
 use warnings;
 
@@ -49,7 +49,26 @@ ok($R eq 'FOOBAR', '$XSIG{sig} array ref assignment respected');
 
 push @{$XSIG{$sig}}, sub { chop $R; $R .= 'Z' };
 trigger($sig);
-ok($R eq 'FOOBARBAZ');
+ok($R eq 'FOOBARBAZ', 'append @{$XSIG{sig}} works');
+
+##################################################################
+
+# bogus functions should act like ignore.
+$R = '';
+$XSIG{$sig} = [ $f{H}, $f{E}, \&bogus, $f{L}, $f{L}, undef, $f{O} ];
+trigger($sig);
+ok($R eq 'HELLO', '$XSIG{sig} with \&bogus function ok');
+
+$XSIG{$sig} = [ $f{W}, $f{O}, 'bogus', $f{R}, $f{L}, 'IGNORE', $f{D} ];
+trigger($sig);
+ok($R eq 'HELLOWORLD', '$XSIG{sig} with \'bogus\' function ok');
+
+
+# $SIG{sig}=*glob is an error on 5.8, but
+# $XSIG{sig}[idx]=*glob is ok.
+$XSIG{$sig} = [ $f{W}, *bogus, \&CLEAR, $f{F}, $f{O}, undef, $f{O} ];
+trigger($sig);
+ok($R eq 'FOO', '$XSIG{sig} with *bogus function ok');
 
 ##################################################################
 
@@ -66,32 +85,32 @@ SKIP: {
 
   $SIG{$sig} = 'IGNORE';
   unshift @{$XSIG{$sig}}, \&CLEAR, $f{X}, $f{Y}, $f{Z}, undef, $f{G};
-  ok(tied @{$XSIG{$sig}});
+  ok(tied @{$XSIG{$sig}}, '@{$XSIG{sig} is tied');
   trigger($sig);
-  ok($R eq 'XYZG', "\$R is $R, expect XYZG");
+  ok($R eq 'XYZG', 'update sig, trigger sig');
 
   push @{$XSIG{$alias}}, $f{H}, $f{I}, $f{J}, $f{T};
   trigger($alias);
-  ok($R eq 'XYZGHIJT');
+  ok($R eq 'XYZGHIJT', 'update alias, trigger alias');
 
   $XSIG{$alias}[-4] = undef;
   pop @{$XSIG{$sig}};
   trigger($sig);
-  ok($R eq 'XZGHIJ', "\$R is $R, expected 'XZGHIJ'");
+  ok($R eq 'XZGHIJ', 'update alias and sig, trigger sig');
 
 
   $XSIG{$sig} = [ sub { substr($R,1,3) = "o" } ];
   unshift @{$XSIG{$sig}}, \&CLEAR, $f{X}, $f{Y}, $f{Z}, undef, $f{G};
   push @{$XSIG{$sig}}, $f{H}, $f{I}, $f{J};
   trigger($alias);
-  ok($R eq 'XoHIJ', "\$R is $R, expect XoHIJ");
+  ok($R eq 'XoHIJ', 'update sig, trigger alias');
 
   $R = '';
   $XSIG{$sig} = [];
   push @{$XSIG{$sig}}, 'IGNORE', undef, '', '', $f{Q}, $f{R}, $f{S};
 
   trigger($sig);
-  ok($R eq 'QRS', "\$R is $R, expected QRS");
+  ok($R eq 'QRS', 'reinit sig');
 
   unshift @{$XSIG{$alias}}, 'main::CLEAR', $f{X}, $f{S}, $f{I}, $f{G};
   sub fbang { $R .= "!" };
@@ -100,11 +119,11 @@ SKIP: {
 #  print @{$XSIG{$sig}};
 
   trigger($alias);
-  ok($R eq 'XSIG!QRS', "\$R is $R, expected XSIG!QRS");
+  ok($R eq 'XSIG!QRS', 'update and trigger alias');
 
   shift @{$XSIG{$sig}};  # \&CLEAR
   pop @{$XSIG{$sig}};    # S
   trigger($alias);
-  ok($R eq 'XSIG!QRSXSIG!QR');
+  ok($R eq 'XSIG!QRSXSIG!QR', 'update sig, trigger alias');
 
 }

@@ -1,4 +1,4 @@
-use Signals::XSIG qw(untied %XSIG);
+use Signals::XSIG;
 use Test::More tests => 88;
 use t::SignalHandlerTest;
 use Config;

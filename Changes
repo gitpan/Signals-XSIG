@@ -1,6 +1,11 @@
 Revision history for Signals-XSIG
 
-0.11    2011-04-21
+0.12    2011-07-08
+        Fix so $SIG{sig}=\&bogus, $SIG{sig}='bogus', $SIG{sig}=*bogus
+        don't crash the program when the signal is handled.
+        Doc and test for override DEFAULT behavior feature.
+
+0.11    2011-04-18
         More test and doc tweaks.
 
 0.10    2011-02-11

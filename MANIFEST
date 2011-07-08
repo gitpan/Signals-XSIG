@@ -18,6 +18,7 @@ t/20-defaults.tt
 t/20a-defaults.t
 t/20b-defaults.t
 t/20c-defaults.t
+t/21-override-defaults.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t

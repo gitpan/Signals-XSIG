@@ -13,9 +13,12 @@ use strict;
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(%XSIG);
-our @EXPORT_OK = qw(untied);
+our @EXPORT_OK = qw(untied %DEFAULT_BEHAVIOR);
 
-our $VERSION = '0.11';
+our %DEFAULT_BEHAVIOR;
+*DEFAULT_BEHAVIOR = \%Signals::XSIG::Default::DEFAULT_BEHAVIOR;
+
+our $VERSION = '0.12';
 our (%XSIG, %_XSIG, %SIGTABLE, $_REFRESH, $_DISABLE_WARNINGS);
 our $_INITIALIZED = 0;
 our $SIGTIE = bless {}, 'Signals::XSIG::TieSIG';
@@ -52,8 +55,7 @@ sub _init {
   $_REFRESH = 1;
   foreach my $sig (@name, '__WARN__', '__DIE__') {
     next if $sig eq 'ZERO';
-    eval { (tied @{$_XSIG{$sig}})->_refresh_SIG };
-    if ($@) {
+    unless (eval { (tied @{$_XSIG{$sig}})->_refresh_SIG; 1 }) {
       Carp::confess "Error initializing \@{\$XSIG{$sig}}!: $@\n";
     }
   }
@@ -117,6 +119,7 @@ sub __shadow_signal_handler {
       next if $seen_default++;
       Signals::XSIG::Default::perform_default_behavior($signal, @args);
     } else {
+      next if !defined &$subhandler;
       no strict 'refs';                    ## no critic (NoStrict)
       if ($signal =~ /__\w+__/) {
 	$subhandler->(@args);
@@ -331,7 +334,16 @@ sub Signals::XSIG::TieArray::_refresh_SIG {
   my $handler_to_install;
   if (@index_list == 0) {
     $handler_to_install = undef;
-  } elsif (@index_list == 1) {
+  }
+
+  # XXX - if there is a single handler, and that handler is 'DEFAULT',
+  #       do we want to install the shadow signal handler anyway?
+  #       The caller may have overridden the DEFAULT behavior of the signal,
+  #       so yeah, I think we do.
+
+  elsif (@index_list == 1 && 
+	 ($seen_default == 0 || ref($DEFAULT_BEHAVIOR{$sig}) eq '')) {
+#!$seen_default) {
     $handler_to_install = $handlers[$index_list[0]];
   } else {
     if ($sig eq '__WARN__') {
@@ -486,9 +498,10 @@ sub Signals::XSIG::TieScalar::STORE {
   }
 
   croak "Thought this code was unreachable.\n";
+
   # otherwise, treat  $XSIG{key}=VAL  like $SIG{key}=VAL or $XSIG{key}[0]=val
-  $self->{val}[0] = $value;
-  return $old;
+  #$self->{val}[0] = $value;
+  #return $old;
 }
 
 ##################################################################
@@ -573,7 +586,7 @@ Signals::XSIG - install multiple signal handlers through %XSIG
 
 =head1 VERSION
 
-Version 0.11
+Version 0.12
 
 =head1 SYNOPSIS
 
@@ -783,6 +796,55 @@ the main handler or any later handlers.
 
 =back
 
+=head1 OVERRIDING DEFAULT SIGNAL BEHAVIOR
+
+C<Signals::XSIG> provides two ways that the 'DEFAULT' signal behavior
+(that is, the behavior of a trapped signal when one or more of 
+its signal handlers is set to C<'DEFAULT'>,
+B<not> the behavior when a signal does not have a signal handler set)
+can be overridden for a specific signal.
+
+=over 4
+
+=item * define a C<< Signals::XSIG::Default::default_<SIG> >> function
+
+    sub Signals::XSIG::Default::default_QUIT {
+        print "Hello world.\n";
+    }
+    $SIG{QUIT} = 'DEFAULT';
+    kill 'QUIT', $$;
+
+=item * set a handler in C< %Signals::XSIG::DEFAULT_BEHAVIOR >
+
+    $Signals::XSIG::DEFAULT_BEHAVIOR{USR1} = sub { print "dy!" }
+    $XSIG{'USR1'} = [ sub {print "How"}, 'DEFAULT',  sub{print$/} ];
+    kill 'USR1', $$;     #  "Howdy!\n"
+
+=back
+
+Note again that the overridden 'DEFAULT' behavior will only be used for
+signals where a handler has been explicitly set to C<'DEFAULT'>, and
+not for signals that do not have any signal handler installed. So
+
+    $SIG{USR1} = 'DEFAULT'; kill 'USR1', $$;
+
+will use the overridden default behavior, but
+
+    $XSIG{USR1} = []; kill 'USR1', $$;
+
+will not.
+
+Also note that in any chain of signal handler calls, the 'DEFAULT'
+signal handler will be called at most once. So for example this code
+
+    my $x = 0;
+    $Signals::XSIG::DEFAULT_BEHAVIOR{USR2} = sub { $x++ };
+    $XSIG{USR2} = [ 'DEFAULT', sub {$x=11}, 'DEFAULT', 'DEFAULT' ];
+    kill 'USR2', $$;
+    print $x;
+
+will output 11, not 13. This is DWIM.
+
 =head1 EXPORT
 
 The C<%XSIG> extended signal handler hash is exported into
@@ -949,5 +1011,3 @@ by the Free Software Foundation; or the Artistic License.
 See http://dev.perl.org/licenses/ for more information.
 
 =cut
-
-

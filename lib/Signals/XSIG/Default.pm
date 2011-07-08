@@ -9,145 +9,171 @@ use warnings;
 use Config;
 use Carp;
 use POSIX ();
+use Exporter;
+
+our @ISA = qw(Exporter);
+our @EXPORT = qw(%DEFAULT_BEHAVIOR);
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};
 
 sub import {
-  my $ignore = 1;
-  while (<DATA>) {
-    next if /^#/;
-    next unless /\S/;
-    if (/^\[(.+)\]/) {
-      if ($1 eq 'default' || $1 eq $^O) {
-	$ignore = 0;
-      } else {
-	$ignore = 1;
-      }
-    } elsif (/\{(.+)\/(\d+)\}/) {
-      if ($1 eq $^O && $2 <= int($] * 1000)) {
-	$ignore = 0;
-      } else {
-	$ignore = 1;
-      }
-    } elsif (!$ignore) {
-      s/^\d+\. //;
-      s/^SIG//;
-      my ($sig, $num, $behavior) = /^(\w+)\s+\[(\d*)\]\s+=>\s+(.+)/;
-      if (defined $sig) {
-	$DEFAULT_BEHAVIOR{$sig} = $behavior;
-      }
+    my $ignore = 1;
+    while (<DATA>) {
+	next if /^#/;
+	next unless /\S/;
+	if (/^\[(.+)\]/) {
+	    if ($1 eq 'default' || $1 eq $^O) {
+		$ignore = 0;
+	    } else {
+		$ignore = 1;
+	    }
+	} elsif (/\{(.+)\/(\d+)\}/) {
+	    if ($1 eq $^O && $2 <= int($] * 1000)) {
+		$ignore = 0;
+	    } else {
+		$ignore = 1;
+	    }
+	} elsif (!$ignore) {
+	    s/^\d+\. //;
+	    s/^SIG//;
+	    my ($sig, $num, $behavior) = /^(\w+)\s+\[(\d*)\]\s+=>\s+(.+)/;
+	    if (defined $sig) {
+		$DEFAULT_BEHAVIOR{$sig} = $behavior;
+	    }
+	}
     }
-  }
-  return;
+    return;
 }
 
 sub perform_default_behavior {
-  my ($signal, @args) = @_;
-  my $funcname = 'default_SIG' . $signal;
-  if (defined &$funcname) {
-    no strict 'refs';                    ## no critic (NoStrict)
-    return if $funcname->($signal, @args);
-  }
+    my ($signal, @args) = @_;
 
-  my $behavior = $DEFAULT_BEHAVIOR{$signal};
-  if (!defined $behavior) {
-    if ($signal =~ /^NUM(\d+)/) {
-      my $signum = 0 + $1;
-      $behavior = $DEFAULT_BEHAVIOR{"NUMxx"};
-      $behavior =~ s/xx/$signum/;
+#print "XXXXXX performing default behavior for $signal ...\n";
+
+    my $funcname = 'default_SIG' . $signal;
+    if (defined &$funcname) {
+	no strict 'refs';                    ## no critic (NoStrict)
+	return if $funcname->($signal, @args);
     }
+
+    my $behavior = $DEFAULT_BEHAVIOR{$signal};
     if (!defined $behavior) {
-      croak "Signals::XSIG: no default behavior is specified ",
-	"for SIG$signal. Terminating this program.\n";
-    }
-  }
-
-  if ($behavior eq 'IGNORE') {
-    return;
-  }
-
-  if ($behavior eq 'SUSPEND') {
-    suspend($signal);
-    # ... then wait for the SIGCONT ... 
-    return;
-  }
-
-  if ($behavior =~ /^ABORT/) {
-    untie %SIG;
-    %SIG = ();
-    $SIG{$signal} = $SIG{"ABRT"} = "DEFAULT";
-    killprog_with_signal("ABRT");
-    POSIX::abort();
-    croak "Abort\n";
-  }
-  if ($behavior =~ /^SIGSEGV/) {
-    killprog_with_signal('SEGV');
-    croak "Abort\n";
-  }
-
-  if ($behavior =~ /^EXIT (\d+)/) {
-    my $exit_code = $1;
-    exit($exit_code);
-  }
-
-  if ($behavior =~ /^TERMINATE/) {
-    my $no;
-    for (my $i=0; $i<@snum; $i++) {
-      $no = $snum[$i] if $signal eq $snam[$i];
+	if ($signal =~ /^NUM(\d+)/) {
+	    my $signum = 0 + $1;
+	    $behavior = $DEFAULT_BEHAVIOR{"NUMxx"};
+	    $behavior =~ s/xx/$signum/;
+	}
+	if (!defined $behavior) {
+	    croak "Signals::XSIG: no default behavior is specified ",
+	        "for SIG$signal. Terminating this program.\n";
+	}
     }
 
-    killprog_with_signal($signal, $no);
-    croak "default behavior for SIG$signal should have killed script ",
-        "but for some reason it didn't  :-(\n";
-  }
+    if (ref($behavior) eq 'CODE') {
+	if (defined &$behavior) {
+	    $behavior->($signal);
+	    return;
+	} else {
+	    carp "Signals::XSIG: Default behavior for SIG$signal ",
+	        "is not set to a valid subroutine.";
+	    return;
+	}
+    }
 
-  croak "Signals::XSIG: unknown behavior \"$behavior\" ",
-    "for SIG$signal. Terminating this program.\n";
+    if ($behavior eq 'IGNORE') {
+	return;
+    }
+
+    if ($behavior eq 'SUSPEND') {
+	suspend($signal);
+	# ... then wait for the SIGCONT ... 
+	return;
+    }
+
+    if ($behavior =~ /^ABORT/) {
+	untie %SIG;
+	%SIG = ();
+	$SIG{$signal} = $SIG{"ABRT"} = "DEFAULT";
+	killprog_with_signal("ABRT");
+	POSIX::abort();
+	croak "Abort\n";
+    }
+    if ($behavior =~ /^SIGSEGV/) {
+	killprog_with_signal('SEGV');
+	croak "Abort\n";
+    }
+
+    if ($behavior =~ /^EXIT (\d+)/) {
+	my $exit_code = $1;
+	exit($exit_code);
+    }
+
+    if ($behavior =~ /^TERMINATE/) {
+	my $number;
+	for (my $i=0; $i<@snum; $i++) {
+	    $number = $snum[$i] if $signal eq $snam[$i];
+	}
+
+	killprog_with_signal($signal, $number);
+	croak "default behavior for SIG$signal should have killed script ",
+            "but for some reason it didn't  :-(\n";
+    }
+
+    croak "Signals::XSIG: unknown behavior \"$behavior\" ",
+        "for SIG$signal. Terminating this program.\n";
 }
 
 sub killprog_with_signal {
-  my ($sig,$sig_no) = @_;
-  untie %SIG;
-  %SIG = ();
-  $SIG{$sig} = 'DEFAULT';
+    my ($sig,$sig_no) = @_;
+    untie %SIG;
+    %SIG = ();
+    $SIG{$sig} = 'DEFAULT';
 
-  unless ($sig_no) {
-    my @sig_name = split ' ', $Config{sig_name};
-    my ($sig_no) = grep { $sig eq $sig_name[$_] } split ' ',$Config{sig_num};
-  }
-
-  kill $sig, $$;
-  sleep 1 if $^O eq 'MSWin32';
-  eval {
-    use POSIX ();
-    if ($sig_no) {
-      # this is needed for Linux
-      POSIX::sigaction($sig_no, &POSIX::SIG_DFL);
-      POSIX::sigprocmask(&POSIX::SIG_UNBLOCK, POSIX::SigSet->new($sig_no));
+    unless ($sig_no) {
+	my @sig_name = split ' ', $Config{sig_name};
+	($sig_no) = grep { $sig eq $sig_name[$_] } split ' ',$Config{sig_num};
     }
-  };
-  kill $sig, $$;
-  sleep 1 if $^O eq 'MSWin32';
 
-  my $miniprog = q[$SIG{'__SIGNAL__'}='DEFAULT';
-                   kill '__SIGNAL__',$$;sleep 1+"MSWin32"eq$^O;die];
-  $miniprog =~ s/__SIGNAL__/$sig/g;
-  exec($^X, "-e", $miniprog);
+    kill $sig, $$;
+    sleep 1 if $^O eq 'MSWin32';
+    eval {
+	use POSIX ();
+	if ($sig_no) {
+	    # this is needed for Linux
+	    POSIX::sigaction($sig_no, &POSIX::SIG_DFL);
+	    POSIX::sigprocmask(&POSIX::SIG_UNBLOCK, 
+			       POSIX::SigSet->new($sig_no));
+	}
+    } or ();
+    kill $sig, $$;
+    sleep 1 if $^O eq 'MSWin32';
+
+    my $miniprog = q[$SIG{'__SIGNAL__'}='DEFAULT';
+                     kill '__SIGNAL__',$$;sleep 1+"MSWin32"eq$^O;die];
+    $miniprog =~ s/__SIGNAL__/$sig/g;
+    exec($^X, "-e", $miniprog);
 }
 
 # in principle, SIGSTOP cannot be trapped.
 sub suspend {
-  if ($^O eq 'MSWin32') {
-    # MSWin32 doesn't have signals as such.
-    # Win32::API->SuspendProcess / SuspendThread ?
-    # Win32::Process->suspend ?
-    # Win32::Thread->suspend ?
-  }
-  return kill 'STOP', $$;
+    if ($^O eq 'MSWin32') {
+	# MSWin32 doesn't have signals as such.
+	# Win32::API->SuspendProcess / SuspendThread ?
+	# Win32::Process->suspend ?
+	# Win32::Thread->suspend ?
+	if ($$ > 0) {
+	    # suspend process
+	    #   enumerate all threads in process
+	    #   suspend each thread
+	} else {
+	    # suspend thread
+	}
+    }
+    return kill 'STOP', $$;
 }
 
 ##################################################################
@@ -160,13 +186,13 @@ sub suspend {
 # processing is necessary.
 
 sub default_SIG__WARN__ {          ## no critic (Unpacking)
-  CORE::warn @_;
-  return 1;
+    CORE::warn @_;
+    return 1;
 }
 
 sub default_SIG__DIE__ {          ## no critic (Unpacking)
-  CORE::die @_;
-  return 1;
+    CORE::die @_;
+    return 1;
 }
 
 1;

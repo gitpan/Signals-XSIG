@@ -29,7 +29,8 @@ foreach my $func ('DEFAULT', 'IGNORE', '', undef, 'qualified::name',
     }
     $XSIG{$sig}[0] = $func;
     ok($XSIG{$sig}[0] eq $func, "\$XSIG{$sig}[0] assign from $func ok");
-    ok($SIG{$sig} eq $XSIG{$sig}[0], '$SIG{sig}/$XSIG{sig}[0] equivalent');
+    ok($SIG{$sig} eq $XSIG{$sig}[0], 
+       '$SIG{sig}/$XSIG{sig}[0] equivalent for ' . $func);
   }
 
 }
