@@ -15,7 +15,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(%DEFAULT_BEHAVIOR);
 
 our %DEFAULT_BEHAVIOR;
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 my @snam = split ' ', $Config{sig_name};
 my @snum = split ' ', $Config{sig_num};
@@ -51,8 +51,6 @@ sub import {
 
 sub perform_default_behavior {
     my ($signal, @args) = @_;
-
-#print "XXXXXX performing default behavior for $signal ...\n";
 
     my $funcname = 'default_SIG' . $signal;
     if (defined &$funcname) {
@@ -402,8 +400,9 @@ IOT [] => TERMINATE 134
 ABRT [6] => TERMINATE 134
 EMT [7] => TERMINATE 135
 SEGV [11] => TERMINATE 139
-IO [] => IGNORE
+IO [23] => IGNORE
 IOT [] => TERMINATE 134
+POLL [23] => IGNORE
 
 # www.cpantesters.org/cpan/report/c8635a72-e5d6-11df-a833-d9c7245fd73a
 [irix]
@@ -413,6 +412,12 @@ SEGV [11] => TERMINATE 139
 RTMIN [49] => TERMINATE 49
 RTMAX [64] => TERMINATE 64
 IOT [] => TERMINATE 134
+
+# www.cpantesters.org/cpan/report/8da6fe76-26f2-11e1-953f-bc4e84dee9ce
+[mirbsd]
+ILL [4] => TERMINATE 132
+BUS [10] => TERMINATE 138
+SEGV [11] => TERMINATE 139
 
 # www.cpantesters.org/cpan/report/209fd0b6-e61e-11df-bb29-ad544afd17af
 [netbsd]

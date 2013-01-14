@@ -4,6 +4,7 @@ Makefile.PL
 README
 lib/Signals/XSIG.pm
 lib/Signals/XSIG/Default.pm
+lib/Signals/XSIG/TieArray56.pm
 spike/analyze_default_signal_behavior.pl
 t/SignalHandlerTest.pm
 t/00-load.t

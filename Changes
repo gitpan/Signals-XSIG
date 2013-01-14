@@ -1,5 +1,9 @@
 Revision history for Signals-XSIG
 
+0.13    2013-01-14
+        Backport to 5.6. Incorporate new defaults for gnukfreebsd and
+        mirbsd systems.
+
 0.12    2011-07-08
         Fix so $SIG{sig}=\&bogus, $SIG{sig}='bogus', $SIG{sig}=*bogus
         don't crash the program when the signal is handled.
